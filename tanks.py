@@ -2,6 +2,7 @@
 # coding=utf-8
 
 import os, pygame, time, random, uuid, sys
+from optparse import OptionParser
 
 class myRect(pygame.Rect):
 	""" Add type property """
@@ -447,7 +448,7 @@ class Level():
 		""" Load specified level
 		@return boolean Whether level was loaded
 		"""
-		filename = "levels/"+str(level_nr)
+		filename = "levels/"+options.level_type+"/"+str(level_nr)
 		if (not os.path.isfile(filename)):
 			return False
 		level = []
@@ -1262,10 +1263,12 @@ class Game():
 
 		size = width, height = 480, 416
 
+		'''
 		if "-f" in sys.argv[1:]:
 			screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
 		else:
-			screen = pygame.display.set_mode(size)
+		'''
+		screen = pygame.display.set_mode(size)
 
 		self.clock = pygame.time.Clock()
 
@@ -1453,7 +1456,7 @@ class Game():
 		del gtimer.timers[:]
 
 		# set current stage to 0
-		self.stage = 1
+		self.stage = 0
 
 		self.animateIntroScreen()
 
@@ -1931,7 +1934,16 @@ class Game():
 		self.level = Level(self.stage)
 		self.timefreeze = False
 
-		# set number of enemies by types (basic, fast, power, armor) according to level
+		# set number of enemies by types (basic, fast, power, armor) according to level 
+		with open("enemies/moderate_basic") as f:
+			lines = f.read().splitlines()
+		levels_enemies = []
+		for line in lines:
+			line_int = []
+			for str in line.split():
+				line_int.append(int(str))
+			levels_enemies.append(line_int)
+		'''
 		levels_enemies = (
 			(18,2,0,0), (14,4,0,2), (14,4,0,2), (2,5,10,3), (8,5,5,2),
 			(9,2,7,2), (7,4,6,3), (7,4,7,2), (6,4,7,3), (12,2,4,2),
@@ -1941,6 +1953,7 @@ class Game():
 			(4,6,4,6), (2,8,2,8), (15,2,2,1), (0,4,10,6), (4,8,4,4),
 			(3,8,3,6), (6,4,2,8), (4,4,4,8), (0,10,4,6), (0,6,4,10)
 		)
+		'''
 
 		if self.stage <= 35:
 			enemies_l = levels_enemies[self.stage - 1]
@@ -1956,7 +1969,8 @@ class Game():
 
 		self.reloadPlayers()
 
-		gtimer.add(3000, lambda :self.spawnEnemy())
+		#gtimer.add(3000, lambda :self.spawnEnemy())
+		gtimer.add(options.enemy_spawn_rate, lambda :self.spawnEnemy())
 
 		# if True, start "game over" animation
 		self.game_over = False
@@ -2082,6 +2096,16 @@ class Game():
 			self.draw()
 
 if __name__ == "__main__":
+
+	parser = OptionParser()
+	parser.add_option("-s", "--spawnrate", dest="enemy_spawn_rate", default=3000)
+	parser.add_option("-l", "--leveltype", dest="level_type", default="original")
+					  				  
+									  
+	global options
+	(options, args) = parser.parse_args()
+	
+	options.enemy_spawn_rate = int(options.enemy_spawn_rate)
 
 	gtimer = Timer()
 
