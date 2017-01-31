@@ -1,0 +1,5 @@
+TODO:
+1. speed up game - ok
+2. training without graphics
+3. q-learning agent
+4. approx agent
