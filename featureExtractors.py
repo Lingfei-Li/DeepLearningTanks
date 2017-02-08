@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -70,7 +70,7 @@ class SimpleExtractor(FeatureExtractor):
     def probBullet(self, state, action):
         bullet_prob = 0.0
         player = state.player
-        next_x, next_y = self.calcNextPos(player.rect, action-1, 10.0)
+        next_x, next_y = self.calcNextPos(player.rect, action - 1, 10.0)
 
         factor = 1000
         for bullet in state.bullets:
@@ -91,7 +91,7 @@ class SimpleExtractor(FeatureExtractor):
 
     def probEnemy(self, state, action):
         player = state.player
-        next_x, next_y = self.calcNextPos(player.rect, action-1, 10.0)
+        next_x, next_y = self.calcNextPos(player.rect, action - 1, 10.0)
 
         enemy_prob = 0.0
         factor = 1000
@@ -123,10 +123,8 @@ class SimpleExtractor(FeatureExtractor):
     def horizontalSpace(self, state, action):
         player = state.player
         next_x, next_y = self.calcNextPos(player.rect, action-1, 10.0)
-
         return abs(abs(next_x)-abs(480-next_x))
 
-        
     def nearEdge(self, state, action):
         player = state.player
         next_x, next_y = self.calcNextPos(player.rect, action-1, 10.0)
