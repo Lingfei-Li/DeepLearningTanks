@@ -38,38 +38,7 @@ class SimpleExtractor(FeatureExtractor):
     - whether a ghost is one step away
     """
 
-    def enemiesFaced(self, state):
-
-        direction = state.player.direction
-        facedEnemies = []
-        for enemy in state.enemies:
-            if direction == Const.DIR_UP:
-                if enemy.rect.centery < state.player.rect.centery:
-                    if enemy.rect.centerx < state.player.rect.centerx and enemy.direction == Const.DIR_RIGHT:
-                        facedEnemies.append(enemy)
-                    if enemy.rect.centerx > state.player.rect.centerx and enemy.direction == Const.DIR_LEFT:
-                        facedEnemies.append(enemy)
-            elif direction == Const.DIR_RIGHT:
-                if enemy.rect.centerx > state.player.rect.centerx:
-                    if enemy.rect.centery < state.player.rect.centery and enemy.direction == Const.DIR_DOWN:
-                        facedEnemies.append(enemy)
-                    if enemy.rect.centery > state.player.rect.centery and enemy.direction == Const.DIR_UP:
-                        facedEnemies.append(enemy)
-            elif direction == Const.DIR_DOWN:
-                if enemy.rect.centery > state.player.rect.centery:
-                    if enemy.rect.centerx < state.player.rect.centerx and enemy.direction == Const.DIR_RIGHT:
-                        facedEnemies.append(enemy)
-                    if enemy.rect.centerx > state.player.rect.centerx and enemy.direction == Const.DIR_LEFT:
-                        facedEnemies.append(enemy)
-            elif direction == Const.DIR_LEFT:
-                if enemy.rect.centerx < state.player.rect.centerx:
-                    if enemy.rect.centery < state.player.rect.centery and enemy.direction == Const.DIR_DOWN:
-                        facedEnemies.append(enemy)
-                    if enemy.rect.centery > state.player.rect.centery and enemy.direction == Const.DIR_UP:
-                        facedEnemies.append(enemy)
-
-        return facedEnemies
-
+				
     def calcPosDiff(self, direction, step):
         dx = 0
         dy = 0
@@ -103,33 +72,21 @@ class SimpleExtractor(FeatureExtractor):
         player = state.player
         next_x, next_y = self.calcNextPos(player.rect, action-1, 10.0)
 
-        factor = 100
+        factor = 1000
         for bullet in state.bullets:
             dist = math.hypot(bullet.rect.centerx - next_x, bullet.rect.centery - next_y)
             if dist is not None:
                 if abs(bullet.rect.centery - next_y) < 50:
-                    if bullet.rect.centerx < next_x and bullet.direction == Const.DIR_RIGHT:
-                        if (player.direction == Const.DIR_UP or player.direction == Const.DO_DOWN) and player.direction == action-1:
-                            bullet_prob += 0.1*factor/dist
-                        else:
-                            bullet_prob += factor/dist
-                    elif bullet.rect.centerx > next_x and bullet.direction == Const.DIR_LEFT:
-                        if (player.direction == Const.DIR_UP or player.direction == Const.DO_DOWN) and player.direction == action-1:
-                            bullet_prob += 0.1*factor/dist
-                        else:
-                            bullet_prob += factor/dist
-                elif abs(bullet.rect.centerx-next_x) < 50:
-                    if bullet.rect.centery < next_y and bullet.direction == Const.DIR_DOWN:
-                        if (player.direction == Const.DIR_LEFT or player.direction == Const.DO_RIGHT) and player.direction == action-1:
-                            bullet_prob += 0.1*factor/dist
-                        else:
-                            bullet_prob += factor/dist
-                    elif bullet.rect.centery > next_y and bullet.direction == Const.DIR_UP:
-                        if (player.direction == Const.DIR_LEFT or player.direction == Const.DO_RIGHT) and player.direction == action-1:
-                            bullet_prob += 0.1*factor/dist
-                        else:
-                            bullet_prob += factor/dist
-
+                    if (player.direction == Const.DIR_UP or player.direction == Const.DO_DOWN) and player.direction == action-1:
+                        bullet_prob -= 0.5*factor/dist
+                    else:
+                        bullet_prob += factor/dist
+                elif abs(bullet.rect.centerx - next_x) < 50:
+                    if (player.direction == Const.DIR_LEFT or player.direction == Const.DO_RIGHT) and player.direction == action-1:
+                        bullet_prob -= 0.5*factor/dist
+                    else:
+                        bullet_prob += factor/dist
+        
         return bullet_prob/factor
 
     def probEnemy(self, state, action):
@@ -137,73 +94,112 @@ class SimpleExtractor(FeatureExtractor):
         next_x, next_y = self.calcNextPos(player.rect, action-1, 10.0)
 
         enemy_prob = 0.0
-        factor = 100
+        factor = 1000
 
         for enemy in state.enemies:
             dist = math.hypot(enemy.rect.centerx - next_x, enemy.rect.centery - next_y)
             if dist is not None:
                 if abs(enemy.rect.centery - next_y) < 50:
-                    if enemy.rect.centerx < next_x and enemy.direction == Const.DIR_RIGHT:
-                        if (player.direction == Const.DIR_UP or player.direction == Const.DO_DOWN) and player.direction == action-1:
-                            enemy_prob += 0.1*factor/dist
-                        else:
-                            enemy_prob += factor/dist
-                    elif enemy.rect.centerx > next_x and enemy.direction == Const.DIR_LEFT:
-                        if (player.direction == Const.DIR_UP or player.direction == Const.DO_DOWN) and player.direction == action-1:
-                            enemy_prob += 0.1*factor/dist
-                        else:
-                            enemy_prob += factor/dist
+                    if (player.direction == Const.DIR_UP or player.direction == Const.DO_DOWN) and player.direction == action-1:
+                        enemy_prob -= 0.5*factor/dist
                     else:
-                        enemy_prob += 0.5*factor/dist
-                elif abs(enemy.rect.centerx - next_x) < 50:
-                    if enemy.rect.centery < next_y and enemy.direction == Const.DIR_DOWN:
-                        if (player.direction == Const.DIR_LEFT or player.direction == Const.DO_RIGHT) and player.direction == action-1:
-                            enemy_prob += 0.1*factor/dist
-                        else:
-                            enemy_prob += factor/dist
-                    elif enemy.rect.centery > next_y and enemy.direction == Const.DIR_UP:
-                        if (player.direction == Const.DIR_LEFT or player.direction == Const.DO_RIGHT) and player.direction == action-1:
-                            enemy_prob += 0.1*factor/dist
-                        else:
-                            enemy_prob += factor/dist
+                        enemy_prob += factor/dist
+                elif abs(enemy.rect.centerx - next_x) < 50:                
+                    if (player.direction == Const.DIR_LEFT or player.direction == Const.DO_RIGHT) and player.direction == action-1:
+                        enemy_prob -= 0.5*factor/dist
                     else:
-                        enemy_prob += 0.5*factor/dist
-
+                        enemy_prob += factor/dist
+                    
         return enemy_prob/factor
 
-    def probSpace(self, state, action):
+        
+    def verticalSpace(self, state, action):
         player = state.player
-        x = player.rect.centerx
-        y = player.rect.centery
-        dx, dy = self.calcPosDiff(action-1, 10.0)
-        next_x, next_y = float(x + dx), float(y + dy)
+        next_x, next_y = self.calcNextPos(player.rect, action-1, 10.0)
 
-        return abs(abs(next_x)-abs(480-next_x)) + abs(abs(next_y)-abs(416-next_y))
+        return abs(abs(next_y)-abs(416-next_y))
 
+        
+    def horizontalSpace(self, state, action):
+        player = state.player
+        next_x, next_y = self.calcNextPos(player.rect, action-1, 10.0)
 
+        return abs(abs(next_x)-abs(480-next_x))
 
+        
+    def nearEdge(self, state, action):
+        player = state.player
+        next_x, next_y = self.calcNextPos(player.rect, action-1, 10.0)
 
-    def probHitEnemy(self, state, action):
-        facedEnemies = self.enemiesFaced(state)
+        horizon = min(abs(next_x), abs(next_x-480))
+        vert = min(abs(next_y), abs(next_y-416))
+        #return horizon/50 + vert/50
+        
+        if abs(next_x) < 50 or abs(480-next_x) < 50 or abs(next_y) < 50 or abs(416-next_y) < 50:
+            return 1
+        return 0
+        
+    def onRightSide(self, state, action):
+        player = state.player
+        next_x, next_y = self.calcNextPos(player.rect, action-1, 10.0)
+        if next_x > 240:
+            return 1
+        return 0
+        
+    def moveFoward(self, state, action):
+        player = state.player
+        if player.direction == action-1:
+            return 1
+        return 0
+        
+    def hitEnemy(self, state, action):
+        
+        player = state.player
+        next_x, next_y = player.rect.centerx, player.rect.centery
+
         prob = 0.0
-        for enemy in facedEnemies:
-            dist = util.dist(state.player, enemy)
+        for enemy in state.enemies:
+            dist = math.hypot(enemy.rect.centerx - next_x, enemy.rect.centery - next_y)
             if dist is not None:
-                prob += 120/dist
-                # prob += 480/abs(enemy.rect.centerx - state.player.rect.centerx)
-                # prob += 416/abs(enemy.rect.centery - state.player.rect.centery)
-        return prob
-
+                if abs(enemy.rect.centery - next_y) < 100:
+                    if enemy.rect.centerx < next_x:     #enemy is to the left
+                        if player.direction == Const.DIR_LEFT and action == Const.DO_FIRE:
+                            return 1
+                        elif  action == Const.DO_LEFT:
+                            return 0.5
+                    elif enemy.rect.centerx > next_x:
+                        if player.direction == Const.DIR_RIGHT and action == Const.DO_FIRE:
+                            return 1
+                        elif action == Const.DO_RIGHT:
+                            return 0.5
+                elif abs(enemy.rect.centerx - next_x) < 100:
+                    if enemy.rect.centery < next_y:
+                        if player.direction == Const.DIR_UP and action == Const.DO_FIRE:
+                            return 1
+                        elif action == Const.DO_UP:
+                            return 0.5
+                    elif enemy.rect.centery > next_y:
+                        if player.direction == Const.DIR_DOWN and action == Const.DO_FIRE:
+                            return 1
+                        elif action == Const.DO_DOWN:
+                            return 0.5
+        return 0
+                
 
     def getFeatures(self, state, action):
         # extract the grid of food and wall locations and get the ghost locations
         features = util.Counter()
 
         features["bias"] = 1.0
-        # features["hit"] = self.probHitEnemy(state, action)
         features["enemy"] = self.probEnemy(state, action)
         features["bullet"] = self.probBullet(state, action)
-        # features["space"] = self.probSpace(state, action)
+        features["edge"] = self.nearEdge(state, action)
+        features["hitEnemy"] = self.hitEnemy(state, action)
+        features["moveFoward"] = self.moveFoward(state, action)
+        features["onRightSide"] = self.onRightSide(state, action)
+        #print(features["hitEnemy"])
+        #features["vertSpace"] = self.verticalSpace(state, action)
+        #features["horizonSpace"] = self.horizontalSpace(state, action)
 
-        features.divideAll(2000.0)
+        features.divideAll(10.0)
         return features
