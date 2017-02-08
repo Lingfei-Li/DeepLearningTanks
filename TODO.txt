@@ -3,3 +3,8 @@ TODO:
 2. training without graphics
 3. q-learning agent
 4. approx agent
+
+
+
+command to start:
+python tanks.py -l minimal -a q -e 5.0 -s 1000.0 -k 1000

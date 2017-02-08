@@ -11,4 +11,5 @@ class Const:
 
     (OWNER_PLAYER, OWNER_ENEMY) = range(2)
 
-    ACTIONS = range(0,6)
+    #ACTIONS = range(0,6)
+    ACTIONS = range(1,6)

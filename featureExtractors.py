@@ -184,7 +184,6 @@ class SimpleExtractor(FeatureExtractor):
                         elif action == Const.DO_DOWN:
                             return 0.5
         return 0
-                
 
     def getFeatures(self, state, action):
         # extract the grid of food and wall locations and get the ghost locations
@@ -194,7 +193,7 @@ class SimpleExtractor(FeatureExtractor):
         features["enemy"] = self.probEnemy(state, action)
         features["bullet"] = self.probBullet(state, action)
         features["edge"] = self.nearEdge(state, action)
-        features["hitEnemy"] = self.hitEnemy(state, action)
+        #features["hitEnemy"] = self.hitEnemy(state, action)
         features["moveFoward"] = self.moveFoward(state, action)
         features["onRightSide"] = self.onRightSide(state, action)
         #print(features["hitEnemy"])

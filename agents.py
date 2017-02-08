@@ -217,7 +217,7 @@ class ReinforcementAgent(ValueEstimationAgent):
     def isInTesting(self):
         return not self.isInTraining()
 
-    def __init__(self, actionFn=None, numTraining=100, epsilon=0.1, alpha=0.5, gamma=1):
+    def __init__(self, actionFn=None, numTraining=100, epsilon=0.1, alpha=0.5, gamma=0.9):
         """
         actionFn: Function which takes a state and returns the list of legal actions
 
@@ -259,6 +259,144 @@ class ReinforcementAgent(ValueEstimationAgent):
         self.lastAction = action
 
 
+class PolicyGradientAgent(ReinforcementAgent):
+    ''' Actor-Critic Agent '''
+    def __init__(self, **args):
+        "You can initialize Q-values here..."
+        ReinforcementAgent.__init__(self, **args)
+        self.weights = util.Counter()
+
+        #100 episodes of training
+        self.weights['enemy'] = -10
+        self.weights['bias'] = -10
+        self.weights['bullet'] = -200
+        self.weights['edge'] = -10
+        self.weights['hitEnemy'] = 10
+        self.weights['moveFoward'] = 10
+
+        self.legalActions = Const.ACTIONS
+        self.featExtractor = SimpleExtractor()
+        self.lastAction = 1
+
+        
+    def getQValue(self, state, action):
+        """
+          Returns Q(state,action)
+          Should return 0.0 if we have never seen a state
+          or the Q node value otherwise
+        """
+        "*** YOUR CODE HERE ***"
+        qvalue = 0.0
+        for feature_name, value in self.featExtractor.getFeatures(state, action).iteritems():
+            qvalue += value * self.weights[feature_name]
+        return qvalue
+
+
+    def computeValueFromQValues(self, state):
+        """
+          Returns max_action Q(state,action)
+          where the max is over legal actions.  Note that if
+          there are no legal actions, which is the case at the
+          terminal state, you should return a value of 0.0.
+        """
+        "*** YOUR CODE HERE ***"
+        max_next_qvalue = None
+        for nextAction in self.legalActions:
+            next_qvalue = self.getQValue(state, nextAction)
+            if max_next_qvalue is None or max_next_qvalue < next_qvalue:
+                max_next_qvalue = next_qvalue
+        if max_next_qvalue is None:
+            max_next_qvalue = 0.0
+
+        return max_next_qvalue
+
+    def computeActionFromQValues(self, state):
+        """
+          Compute the best action to take in a state.  Note that if there
+          are no legal actions, which is the case at the terminal state,
+          you should return None.
+        """
+        "*** YOUR CODE HERE ***"
+
+        max_qvalue = None
+        for action in self.legalActions:
+            qvalue = self.getQValue(state, action)
+            if max_qvalue is None or max_qvalue < qvalue:
+                max_qvalue = qvalue
+
+        if max_qvalue is None:
+            return None
+
+        actions = []
+        for action in self.legalActions:
+            qvalue = self.getQValue(state, action)
+            if qvalue == max_qvalue:
+                actions.append(action)
+
+        if max_qvalue is not None and len(actions) == 0:
+            return self.legalActions[0]
+        if len(actions) > 1:
+            return Const.DO_NOTHING
+        return random.choice(actions)
+
+    def getAction(self, state, discState):
+        features = numpy.zeros(self.weights.shape[:-1])
+        features[discState, :] = self.basis.computeFeatures(state)
+        policy = self.getPolicy(features)
+        return numpy.where(policy.cumsum() >= numpy.random.random())[0][0]
+
+        
+    def getAction(self, state):
+        """
+          Compute the action to take in the current state.  With
+          probability self.epsilon, we should take a random action and
+          take the best policy action otherwise.  Note that if there are
+          no legal actions, which is the case at the terminal state, you
+          should choose None as the action.
+
+          HINT: You might want to use util.flipCoin(prob)
+          HINT: To pick randomly from a list, use random.choice(list)
+        """
+        # Pick Action
+        "*** YOUR CODE HERE ***"
+        # Epsilon greedy
+        if util.flipCoin(self.epsilon) is True:
+            self.lastAction = random.choice(self.legalActions)
+        else:
+            self.lastAction = self.computeActionFromQValues(state)
+        return self.lastAction
+
+    def update(self, state, action, nextState, reward):
+        """
+          The parent class calls this to observe a
+          state = action => nextState and reward transition.
+          You should do your Q-Value update here
+
+          NOTE: You should never call this function,
+          it will be called on your behalf
+        """
+        "*** YOUR CODE HERE ***"
+        diff = reward + self.discount * self.computeValueFromQValues(nextState) - self.getQValue(state, action)
+        for feature_name, feature_value in self.featExtractor.getFeatures(state, action).iteritems():
+            self.weights[feature_name] += self.alpha * diff * feature_value
+
+    def getPolicy(self, state):
+        return self.computeActionFromQValues(state)
+
+    def getValue(self, state):
+        return self.computeValueFromQValues(state)
+
+    def final(self, state):
+        print("Training Done")
+        print("Total episodes: " + str(self.episodesSoFar))
+        f = open('train_weight.txt', 'w')
+        for feature, weight in self.weights.iteritems():
+            f.write(str(feature) + " " + str(weight) + "\n" )
+        f.close()  # you can omit in most cases as the destructor will call it
+
+        plt.plot(self.episodeRewardsList)
+        plt.ylabel("Episode Reward")
+        plt.show()
 
 
 
@@ -270,13 +408,12 @@ class QLearningAgent(ReinforcementAgent):
         self.weights = util.Counter()
 
         #100 episodes of training
-        self.weights['enemy'] = -0.364451987384
-        self.weights['bias'] = -41.3496204504
-        self.weights['bullet'] = -1.01147469443
-
         self.weights['enemy'] = -10
-        self.weights['bias'] = -100
+        self.weights['bias'] = -10
         self.weights['bullet'] = -200
+        self.weights['edge'] = -10
+        self.weights['hitEnemy'] = 10
+        self.weights['moveFoward'] = 10
 
         self.legalActions = Const.ACTIONS
         self.featExtractor = SimpleExtractor()

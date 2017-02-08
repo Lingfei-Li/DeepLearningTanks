@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding=utf-8
 
-import os, pygame, time, random, uuid, sys, util, agents, state
+import os, pygame, time, random, uuid, sys, util, agents, state, pgAgents
 from optparse import OptionParser
 
 
@@ -374,7 +374,7 @@ class Level:
 
         # max number of enemies simultaneously  being on map
         self.max_active_enemies = 3
-        self.max_active_enemies = 1
+        #self.max_active_enemies = 1
 
         tile_images = [
             pygame.Surface((8*2, 8*2)),
@@ -786,6 +786,7 @@ class Tank:
                     labels.append(Label(self.rect.topleft, str(points), 500))
                 elif self.side == self.SIDE_PLAYER:
                     self.score -= 1000
+                    #self.score -= 0
 
 
                 self.explode()
@@ -2174,10 +2175,11 @@ class Game:
                 for index, player in enumerate(players):
                     if isinstance(player_agents[index], agents.ReinforcementAgent):
                         next_game_state = state.CompleteState(players[index], enemies, bullets, self.level.mapr, castle, bonuses)
-                        timeReward = 0.5
+                        #timeReward = -0.5
+                        timeReward = 0.1
                         deltaReward = timeReward + player.score - player_scores[player]  # Calculate player score
-                        if player.state == player.STATE_DEAD:
-                            deltaReward -= 200
+                        #if player.state == player.STATE_DEAD:
+                        #    deltaReward -= 200
                         player_agents[index].observeTransition(game_state,player_actions[player],next_game_state,deltaReward),
 
 
@@ -2234,6 +2236,9 @@ if __name__ == "__main__":
     elif options.agent_type == "q":
         agent1 = agents.QLearningAgent()
         agent2 = agents.QLearningAgent()
+    elif options.agent_type == "p":
+        agent1 = pgAgents.PolicyGradientAgent()
+        agent2 = pgAgents.PolicyGradientAgent()
     else:
         agent1 = agents.RandomAgent()
         agent2 = agents.RandomAgent()
