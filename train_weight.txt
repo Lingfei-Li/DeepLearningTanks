@@ -1,3 +1,10 @@
-enemy -0.364451987384
-bias -41.3496204504
-bullet -1.01147469443
+horizontalBullet -30.9341133274
+enemy -10
+horizontalEnemy -0.720059439588
+bullet -200
+hitEnemy 10
+edge -39.6431955914
+bias -47.9521379931
+verticalEnemy -1.61781743711
+verticalBullet -1.90760872753
+moveFoward 10

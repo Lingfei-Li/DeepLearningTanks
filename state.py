@@ -1,4 +1,7 @@
 
+
+
+
 class CompleteState:
 
     def __init__(self, player, enemies, bullets, map, castle, bonus):

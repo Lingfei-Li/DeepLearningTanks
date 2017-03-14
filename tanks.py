@@ -3,6 +3,9 @@
 
 import os, pygame, time, random, uuid, sys, util, agents, state, pgAgents
 from optparse import OptionParser
+from const import Const
+from featureExtractors import  PositionExtractor
+from featureExtractors import  DangerExtractor
 
 
 class myRect(pygame.Rect):
@@ -64,7 +67,8 @@ class Castle:
         self.img_destroyed = sprites.subsurface(16*2, 15*2, 16*2, 16*2)
 
         # init position
-        self.rect = pygame.Rect(12*16, 24*16, 32, 32)
+        # self.rect = pygame.Rect(12*16, 24*16, 32, 32)
+        self.rect = pygame.Rect(-32, -32, 32, 32)
 
         # start w/ undamaged and shiny castle
         self.rebuild()
@@ -123,6 +127,7 @@ class Bonus:
 
         # blinking state
         self.visible = True
+
 
         self.rect = pygame.Rect(random.randint(0, 416-32), random.randint(0, 416-32), 32, 32)
 
@@ -309,7 +314,7 @@ class Label:
         self.font = pygame.font.SysFont("Arial", 13)
 
         if duration != None:
-            gtimer.add(duration/options.game_speed, lambda :self.destroy(), 1)
+            gtimer.add(duration/options["game_speed"], lambda :self.destroy(), 1)
 
     def draw(self):
         """ draw label """
@@ -344,7 +349,7 @@ class Explosion:
 
         self.image = self.images.pop()
 
-        gtimer.add(interval/options.game_speed, lambda :self.update(), len(self.images) + 1)
+        gtimer.add(interval/options["game_speed"], lambda :self.update(), len(self.images) + 1)
 
     def draw(self):
         global screen
@@ -374,7 +379,6 @@ class Level:
 
         # max number of enemies simultaneously  being on map
         self.max_active_enemies = 3
-        #self.max_active_enemies = 1
 
         tile_images = [
             pygame.Surface((8*2, 8*2)),
@@ -409,7 +413,7 @@ class Level:
         # update these tiles
         self.updateObstacleRects()
 
-        gtimer.add(400/options.game_speed, lambda :self.toggleWaves())
+        gtimer.add(400/options["game_speed"], lambda :self.toggleWaves())
 
     def hitTile(self, pos, power = 1, sound = False):
         """
@@ -450,7 +454,7 @@ class Level:
         """ Load specified level
         @return boolean Whether level was loaded
         """
-        filename = "levels/"+options.level_type+"/"+str(level_nr)
+        filename = "levels/"+options["level_type"]+"/"+str(level_nr)
         if not os.path.isfile(filename):
             return False
         level = []
@@ -619,10 +623,10 @@ class Tank:
         self.state = self.STATE_SPAWNING
 
         # spawning animation
-        self.timer_uuid_spawn = gtimer.add(100/options.game_speed, lambda :self.toggleSpawnImage())
+        self.timer_uuid_spawn = gtimer.add(100/options["game_speed"], lambda :self.toggleSpawnImage())
 
         # duration of spawning
-        self.timer_uuid_spawn_end = gtimer.add(1000/options.game_speed, lambda :self.endSpawning())
+        self.timer_uuid_spawn_end = gtimer.add(1000/options["game_speed"], lambda :self.endSpawning())
 
     def endSpawning(self):
         """ End spawning
@@ -784,8 +788,8 @@ class Tank:
                         sounds["explosion"].play()
 
                     labels.append(Label(self.rect.topleft, str(points), 500))
-                elif self.side == self.SIDE_PLAYER:
-                    self.score -= 1000
+                # elif self.side == self.SIDE_PLAYER:
+                #     self.score -= 1000
                     #self.score -= 0
 
 
@@ -797,7 +801,7 @@ class Tank:
         elif self.side == self.SIDE_PLAYER:
             if not self.paralised:
                 self.setParalised(True)
-                self.timer_uuid_paralise = gtimer.add(10000/options.game_speed, lambda :self.setParalised(False), 1)
+                self.timer_uuid_paralise = gtimer.add(10000/options["game_speed"], lambda :self.setParalised(False), 1)
             return True
 
     def setParalised(self, paralised = True):
@@ -889,11 +893,11 @@ class Enemy(Tank):
         self.path = self.generatePath(self.direction)
 
         # 1000 is duration between shots
-        self.timer_uuid_fire = gtimer.add(1000/options.game_speed, lambda :self.fire())
+        self.timer_uuid_fire = gtimer.add(1000/options["game_speed"], lambda :self.fire())
 
         # turn on flashing
         if self.bonus:
-            self.timer_uuid_flash = gtimer.add(200/options.game_speed, lambda :self.toggleFlash())
+            self.timer_uuid_flash = gtimer.add(200/options["game_speed"], lambda :self.toggleFlash())
 
     def toggleFlash(self):
         """ Toggle flash state """
@@ -922,8 +926,8 @@ class Enemy(Tank):
             return
         bonus = Bonus(self.level)
         bonuses.append(bonus)
-        gtimer.add(500/options.game_speed, lambda :bonus.toggleVisibility())
-        gtimer.add(10000/options.game_speed, lambda :bonuses.remove(bonus), 1)
+        gtimer.add(500/options["game_speed"], lambda :bonus.toggleVisibility())
+        gtimer.add(10000/options["game_speed"], lambda :bonuses.remove(bonus), 1)
 
 
     def getFreeSpawningPosition(self):
@@ -1005,6 +1009,9 @@ class Enemy(Tank):
 
         # collisions with other enemies
         for enemy in enemies:
+            if enemy != self:
+                if abs(self.rect.centerx - enemy.rect.centerx) < 30 and abs(self.rect.centery-enemy.rect.centery) < 30:
+                    self.rect.centerx += 50
             if enemy != self and new_rect.colliderect(enemy.rect):
                 self.turnAround()
                 self.path = self.generatePath(self.direction)
@@ -1012,9 +1019,12 @@ class Enemy(Tank):
 
         # collisions with players
         for player in players:
+            if abs(self.rect.centerx - player.rect.centerx) < 30 and abs(self.rect.centery-player.rect.centery) < 30:
+                self.rect.centerx += 50
             if new_rect.colliderect(player.rect):
                 self.turnAround()
                 self.path = self.generatePath(self.direction)
+                self.rect.topleft = new_rect.topleft
                 return
 
         # collisions with bonuses
@@ -1094,7 +1104,6 @@ class Enemy(Tank):
         # if we can go anywhere else, turn around
         if new_direction == None:
             new_direction = opposite_direction
-            print "nav izejas. griezhamies"
 
         # fix tanks position
         if fix_direction and new_direction == self.direction:
@@ -1193,6 +1202,7 @@ class Player(Tank):
             return
 
         # move player
+        new_position = [self.rect.left, self.rect.top]
         if direction == self.DIR_UP:
             new_position = [self.rect.left, self.rect.top - self.speed]
             if new_position[1] < 0:
@@ -1322,9 +1332,7 @@ class Game:
         self.game_over_y = 416+40
 
         # number of players. here is defined preselected menu value
-        self.nr_of_players = options.players_num
-
-        self.episode = 0
+        self.nr_of_players = 1
 
         del players[:]
         del bullets[:]
@@ -1350,7 +1358,7 @@ class Game:
             self.shieldPlayer(player, True, 10000)
         elif bonus.bonus == bonus.BONUS_SHOVEL:
             self.level.buildFortress(self.level.TILE_STEEL)
-            gtimer.add(10000/options.game_speed, lambda :self.level.buildFortress(self.level.TILE_BRICK), 1)
+            gtimer.add(10000/options["game_speed"], lambda :self.level.buildFortress(self.level.TILE_BRICK), 1)
         elif bonus.bonus == bonus.BONUS_STAR:
             player.superpowers += 1
             if player.superpowers == 2:
@@ -1359,7 +1367,7 @@ class Game:
             player.lives += 1
         elif bonus.bonus == bonus.BONUS_TIMER:
             self.toggleEnemyFreeze(True)
-            gtimer.add(10000/options.game_speed, lambda :self.toggleEnemyFreeze(False), 1)
+            gtimer.add(10000/options["game_speed"], lambda :self.toggleEnemyFreeze(False), 1)
         bonuses.remove(bonus)
 
         labels.append(Label(bonus.rect.topleft, "500", 500))
@@ -1372,12 +1380,12 @@ class Game:
         """
         player.shielded = shield
         if shield:
-            player.timer_uuid_shield = gtimer.add(100/options.game_speed, lambda :player.toggleShieldImage())
+            player.timer_uuid_shield = gtimer.add(100/options["game_speed"], lambda :player.toggleShieldImage())
         else:
             gtimer.destroy(player.timer_uuid_shield)
 
         if shield and duration != None:
-            gtimer.add(duration/options.game_speed, lambda :self.shieldPlayer(player, False), 1)
+            gtimer.add(duration/options["game_speed"], lambda :self.shieldPlayer(player, False), 1)
 
 
     def spawnEnemy(self):
@@ -1410,58 +1418,6 @@ class Game:
 
         self.shieldPlayer(player, True, 4000)
 
-    def gameOver(self):
-        for index, player in enumerate(players):
-            player_agents[index].stopEpisode()
-        self.game_over = True
-        self.showScores()
-        return      #skip "game over" banner
-
-        """ End game and return to menu """
-
-        global play_sounds, sounds
-
-        print "Game Over"
-        if play_sounds:
-            for sound in sounds:
-                sounds[sound].stop()
-            sounds["end"].play()
-
-        self.game_over_y = 416+40
-
-        self.game_over = True
-        gtimer.add(3000/options.game_speed, lambda :self.showScores(), 1)
-
-
-    def gameOverScreen(self):
-        """ Show game over screen """
-
-        global screen
-
-        # stop game main loop (if any)
-        self.running = False
-
-
-        # immediately restart
-        # self.showMenu()
-        startGame()
-        return
-
-        screen.fill([0, 0, 0])
-
-        self.writeInBricks("game", [125, 140])
-        self.writeInBricks("over", [125, 220])
-        pygame.display.flip()
-
-        while 1:
-            time_passed = self.clock.tick(50)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    quit()
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_RETURN:
-                        self.showMenu()
-                        return
 
     def showMenu(self):
         """ Show game menu
@@ -1479,31 +1435,6 @@ class Game:
 
         # set current stage to 0
         self.stage = 0
-
-        # self.animateIntroScreen()
-
-        '''
-        main_loop = True
-        while main_loop:
-            time_passed = self.clock.tick(50)
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    quit()
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_q:
-                        quit()
-                    elif event.key == pygame.K_UP:
-                        if self.nr_of_players == 2:
-                            self.nr_of_players = 1
-                            self.drawIntroScreen()
-                    elif event.key == pygame.K_DOWN:
-                        if self.nr_of_players == 1:
-                            self.nr_of_players = 2
-                            self.drawIntroScreen()
-                    elif event.key == pygame.K_RETURN:
-                        main_loop = False
-        '''
 
         del players[:]
         self.nextLevel()
@@ -1539,6 +1470,7 @@ class Game:
             player.level = self.level
             self.respawnPlayer(player, True)
 
+
     def showScores(self):
         ''' Directly go to next level '''
         # stop game main loop (if any)
@@ -1550,142 +1482,6 @@ class Game:
         else:
             self.nextLevel()
         return
-
-        """ Show level scores """
-
-        global screen, sprites, players, play_sounds, sounds
-
-        # stop game main loop (if any)
-        self.running = False
-
-        # clear all timers
-        del gtimer.timers[:]
-
-        if play_sounds:
-            for sound in sounds:
-                sounds[sound].stop()
-
-        hiscore = self.loadHiscore()
-
-        # update hiscore if needed
-        if players[0].score > hiscore:
-            hiscore = players[0].score
-            self.saveHiscore(hiscore)
-        if self.nr_of_players == 2 and players[1].score > hiscore:
-            hiscore = players[1].score
-            self.saveHiscore(hiscore)
-
-        img_tanks = [
-            sprites.subsurface(32*2, 0, 13*2, 15*2),
-            sprites.subsurface(48*2, 0, 13*2, 15*2),
-            sprites.subsurface(64*2, 0, 13*2, 15*2),
-            sprites.subsurface(80*2, 0, 13*2, 15*2)
-        ]
-
-        img_arrows = [
-            sprites.subsurface(81*2, 48*2, 7*2, 7*2),
-            sprites.subsurface(88*2, 48*2, 7*2, 7*2)
-        ]
-
-        screen.fill([0, 0, 0])
-
-        # colors
-        black = pygame.Color("black")
-        white = pygame.Color("white")
-        purple = pygame.Color(127, 64, 64)
-        pink = pygame.Color(191, 160, 128)
-
-        screen.blit(self.font.render("HI-SCORE", False, purple), [105, 35])
-        screen.blit(self.font.render(str(hiscore), False, pink), [295, 35])
-
-        screen.blit(self.font.render("STAGE"+str(self.stage).rjust(3), False, white), [170, 65])
-
-        screen.blit(self.font.render("I-PLAYER", False, purple), [25, 95])
-
-        #player 1 global score
-        screen.blit(self.font.render(str(players[0].score).rjust(8), False, pink), [25, 125])
-
-        if self.nr_of_players == 2:
-            screen.blit(self.font.render("II-PLAYER", False, purple), [310, 95])
-
-            #player 2 global score
-            screen.blit(self.font.render(str(players[1].score).rjust(8), False, pink), [325, 125])
-
-        # tanks and arrows
-        for i in range(4):
-            screen.blit(img_tanks[i], [226, 160+(i*45)])
-            screen.blit(img_arrows[0], [206, 168+(i*45)])
-            if self.nr_of_players == 2:
-                screen.blit(img_arrows[1], [258, 168+(i*45)])
-
-        screen.blit(self.font.render("TOTAL", False, white), [70, 335])
-
-        # total underline
-        pygame.draw.line(screen, white, [170, 330], [307, 330], 4)
-
-        pygame.display.flip()
-
-        self.clock.tick(2)
-
-        interval = 5
-
-        # points and kills
-        for i in range(4):
-
-            # total specific tanks
-            tanks = players[0].trophies["enemy"+str(i)]
-
-            for n in range(tanks+1):
-                if n > 0 and play_sounds:
-                    sounds["score"].play()
-
-                # erase previous text
-                screen.blit(self.font.render(str(n-1).rjust(2), False, black), [170, 168+(i*45)])
-                # print new number of enemies
-                screen.blit(self.font.render(str(n).rjust(2), False, white), [170, 168+(i*45)])
-                # erase previous text
-                screen.blit(self.font.render(str((n-1) * (i+1) * 100).rjust(4)+" PTS", False, black), [25, 168+(i*45)])
-                # print new total points per enemy
-                screen.blit(self.font.render(str(n * (i+1) * 100).rjust(4)+" PTS", False, white), [25, 168+(i*45)])
-                pygame.display.flip()
-                self.clock.tick(interval)
-
-            if self.nr_of_players == 2:
-                tanks = players[1].trophies["enemy"+str(i)]
-
-                for n in range(tanks+1):
-
-                    if n > 0 and play_sounds:
-                        sounds["score"].play()
-
-                    screen.blit(self.font.render(str(n-1).rjust(2), False, black), [277, 168+(i*45)])
-                    screen.blit(self.font.render(str(n).rjust(2), False, white), [277, 168+(i*45)])
-
-                    screen.blit(self.font.render(str((n-1) * (i+1) * 100).rjust(4)+" PTS", False, black), [325, 168+(i*45)])
-                    screen.blit(self.font.render(str(n * (i+1) * 100).rjust(4)+" PTS", False, white), [325, 168+(i*45)])
-
-                    pygame.display.flip()
-                    self.clock.tick(interval)
-
-            self.clock.tick(interval)
-
-        # total tanks
-        tanks = sum([i for i in players[0].trophies.values()]) - players[0].trophies["bonus"]
-        screen.blit(self.font.render(str(tanks).rjust(2), False, white), [170, 335])
-        if self.nr_of_players == 2:
-            tanks = sum([i for i in players[1].trophies.values()]) - players[1].trophies["bonus"]
-            screen.blit(self.font.render(str(tanks).rjust(2), False, white), [277, 335])
-
-        pygame.display.flip()
-
-        # do nothing for 2 seconds
-        self.clock.tick(1)
-        self.clock.tick(1)
-
-        if self.game_over:
-            self.gameOverScreen()
-        else:
-            self.nextLevel()
 
 
     def draw(self):
@@ -1921,7 +1717,6 @@ class Game:
         if hiscore > 19999 and hiscore < 1000000:
             return hiscore
         else:
-            print "cheater =["
             return 20000
 
     def saveHiscore(self, hiscore):
@@ -1931,7 +1726,6 @@ class Game:
         try:
             f = open(".hiscore", "w")
         except:
-            print "Can't save hi-score"
             return False
         f.write(str(hiscore))
         f.close()
@@ -1949,22 +1743,13 @@ class Game:
             sounds["bg"].stop()
 
         self.active = False
-        gtimer.add(3000/options.game_speed, lambda :self.showScores(), 1)
+        gtimer.add(3000/options["game_speed"], lambda :self.showScores(), 1)
 
-        print "Stage "+str(self.stage)+" completed"
-
-    def quitGame(self):
-        for index, agent in enumerate(player_agents):
-            if index < len(players):
-                game_state = state.CompleteState(players[index], enemies, bullets, self.level.mapr, castle, bonuses)
-            else:
-                game_state = state.CompleteState(None, enemies, bullets, self.level.mapr, castle, bonuses)
-            agent.final(game_state)
 
     def nextLevel(self):
         """ Start next level """
 
-        global castle, players, bullets, bonuses, play_sounds, sounds
+        global castle, players, bullets, bonuses, play_sounds, sounds, episodes
 
         del bullets[:]
         del enemies[:]
@@ -1972,14 +1757,8 @@ class Game:
         castle.rebuild()
         del gtimer.timers[:]
 
-        # if self.episode >= options.train_episodes - 10:
-        #     options.game_speed = 2.0
-
-        if self.episode >= options.train_episodes:
-            self.quitGame()
-            return
-
-        self.episode += 1
+        # if episodes >= options.train_episodes - 10:
+             # options["game_speed"] = 2.0
 
         # load level
         #self.stage += 1
@@ -2012,13 +1791,7 @@ class Game:
 
         self.reloadPlayers()
 
-        for index, player in enumerate(players):
-            player_agents[index].startEpisode()
-
-        # if 3000/(options.game_speed) <= 100 or 3000/(options.game_speed * options.enemy_spawn_rate) <= 100:
-        #     gtimer.add(100, lambda :self.spawnEnemy())
-        # else:
-        gtimer.add(3000/(options.game_speed), lambda :self.spawnEnemy())
+        gtimer.add(3000/(options["game_speed"]), lambda :self.spawnEnemy())
 
         # if True, start "game over" animation
         self.game_over = False
@@ -2029,240 +1802,117 @@ class Game:
         # if False, players won't be able to do anything
         self.active = True
 
-        self.draw()
+class Env:
+    def __init__(self, leveltype, gamespeed, trainepisodes):
+        global options
+        options = dict()
+        options["level_type"] = leveltype
+        options["game_speed"] = gamespeed
+        options["train_episodes"] = trainepisodes
+        options["draw"] = True
+        self.game = None
+        self.lastScore = 0
 
+
+    def reset(self):
+        global gtimer, sprites, screen, players, enemies, bullets, bonuses, labels, play_sounds, sounds, castle
+        gtimer = Timer()
+
+        sprites = None
+        screen = None
+        players = []
+        enemies = []
+        bullets = []
+        bonuses = []
+        labels = []
+
+        play_sounds = False
+        sounds = {}
+
+        self.game = Game()
+        castle = Castle()
+        self.game.showMenu()
+
+        player = players[0]
+        game_state = state.CompleteState(player, enemies, bullets, self.game.level.mapr, castle, bonuses)
+
+        return game_state
+
+    '''
+    @returns state, reward, gameover
+    '''
+    def step_return(self, episode_over):
+        player = players[0]
+        game_state = state.CompleteState(player, enemies, bullets, self.game.level.mapr, castle, bonuses)
+        time_reward = 1
+        reward = player.score + time_reward
+        return game_state , reward, episode_over, None
+        return DangerExtractor.getFeatures(game_state) , reward, episode_over, None
+
+    def render(self):
+        self.game.draw()
+
+
+    '''
+    @returns state, reward, episode_over
+    '''
+    def step(self, action):
         # Main game loop
-        while self.running:
 
-            time_passed = self.clock.tick(50*options.game_speed)
+        time_passed = self.game.clock.tick(50*options["game_speed"])
 
-            for event in pygame.event.get():
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    pass
-                elif event.type == pygame.QUIT:
-                    quit()
-                elif event.type == pygame.KEYDOWN and not self.game_over and self.active:
+        player = players[0]
+        # Get action from learning agent
+        # The complete state includes: players, enemies, bullets, level, castle, bonus
 
-                    if event.key == pygame.K_q:
-                        quit()
-                    # toggle sounds
-                    elif event.key == pygame.K_m:
-                        play_sounds = not play_sounds
-                        if not play_sounds:
-                            pygame.mixer.stop()
-                        else:
-                            sounds["bg"].play(-1)
+        if player.state == player.STATE_ALIVE and not self.game.game_over and self.game.active:
+            if action == Const.DO_FIRE:
+                # player.fire()
+                pass
+            else:
+                player.move(action-1)
 
-                    for player in players:
-                        if player.state == player.STATE_ALIVE:
-                            try:
-                                index = player.controls.index(event.key)
-                            except:
-                                pass
-                            else:
-                                if index == 0:
-                                    if player.fire() and play_sounds:
-                                        sounds["fire"].play()
-                                elif index == 1:
-                                    player.pressed[0] = True
-                                elif index == 2:
-                                    player.pressed[1] = True
-                                elif index == 3:
-                                    player.pressed[2] = True
-                                elif index == 4:
-                                    player.pressed[3] = True
-                elif event.type == pygame.KEYUP and not self.game_over and self.active:
-                    for player in players:
-                        if player.state == player.STATE_ALIVE:
-                            try:
-                                index = player.controls.index(event.key)
-                            except:
-                                pass
-                            else:
-                                if index == 1:
-                                    player.pressed[0] = False
-                                elif index == 2:
-                                    player.pressed[1] = False
-                                elif index == 3:
-                                    player.pressed[2] = False
-                                elif index == 4:
-                                    player.pressed[3] = False
+        player.update(time_passed)
+        player.score = 0
 
-            # Get action from learning agent
-            # The complete state includes: players, enemies, bullets, level, castle, bonus
-            player_scores = dict()
-            player_actions = dict()
-            for index, player in enumerate(players):
-                if not isinstance(player_agents[index], agents.ManualAgent):
-                    game_state = state.CompleteState(players[index], enemies, bullets, self.level.mapr, castle, bonuses)
-                    player_scores[player] = player.score  # Calculate player score. TODO: better solution than dict?
-                    player_actions[player] = -1             # action for dead state
-                    if player.state == player.STATE_ALIVE:
-                        player.pressed[0] = False
-                        player.pressed[1] = False
-                        player.pressed[2] = False
-                        player.pressed[3] = False
-                        index = player_agents[index].getAction(game_state)
-                        if index == 0:
-                            if player.fire() and play_sounds:
-                                sounds["fire"].play()
-                        elif index == 1:
-                            player.pressed[0] = True
-                        elif index == 2:
-                            player.pressed[1] = True
-                        elif index == 3:
-                            player.pressed[2] = True
-                        elif index == 4:
-                            player.pressed[3] = True
-                        player_actions[player] = index
+        for enemy in enemies:
+            if enemy.state == enemy.STATE_DEAD and not self.game.game_over and self.game.active:
+                enemies.remove(enemy)
+                if len(self.game.level.enemies_left) == 0 and len(enemies) == 0:
+                    print("Win")
+                    return self.step_return(True)  #episode over
+            else:
+                enemy.update(time_passed)
 
-            for player in players:
-                if player.state == player.STATE_ALIVE and not self.game_over and self.active:
-                    if player.pressed[0]:
-                        player.move(self.DIR_UP)
-                    elif player.pressed[1]:
-                        player.move(self.DIR_RIGHT)
-                    elif player.pressed[2]:
-                        player.move(self.DIR_DOWN)
-                    elif player.pressed[3]:
-                        player.move(self.DIR_LEFT)
-                player.update(time_passed)
-
-            for enemy in enemies:
-                if enemy.state == enemy.STATE_DEAD and not self.game_over and self.active:
-                    enemies.remove(enemy)
-                    if len(self.level.enemies_left) == 0 and len(enemies) == 0:
-                        self.finishLevel()
+        if not self.game.game_over and self.game.active:
+            if player.state == player.STATE_DEAD:
+                self.game.superpowers = 0
+                player.lives -= 1
+                player.score -= 1000
+                if player.lives > 0:
+                    self.game.respawnPlayer(player)
                 else:
-                    enemy.update(time_passed)
+                    return self.step_return(True)      #episode over
 
-            if not self.game_over and self.active:
-                for player in players:
-                    if player.state == player.STATE_ALIVE:
-                        if player.bonus != None and player.side == player.SIDE_PLAYER:
-                            self.triggerBonus(bonus, player)
-                            player.bonus = None
-                    elif player.state == player.STATE_DEAD:
-                        self.superpowers = 0
-                        player.lives -= 1
-                        if player.lives > 0:
-                            self.respawnPlayer(player)
-                        else:
-                            self.gameOver()
+        for bullet in bullets:
+            if bullet.state == bullet.STATE_REMOVED:
+                bullets.remove(bullet)
+            else:
+                bullet.update()
 
-            for bullet in bullets:
-                if bullet.state == bullet.STATE_REMOVED:
-                    bullets.remove(bullet)
-                else:
-                    bullet.update()
+        for label in labels:
+            if not label.active:
+                labels.remove(label)
 
-            for bonus in bonuses:
-                if bonus.active == False:
-                    bonuses.remove(bonus)
+        if not self.game.game_over:
+            if not castle.active:
+                print("Castle Dead")
+                return self.step_return(True)      #episode over
 
-            for label in labels:
-                if not label.active:
-                    labels.remove(label)
-
-            if not self.game_over:
-                if not castle.active:
-                    self.gameOver()
-
-            gtimer.update(time_passed)
-
-            if not self.game_over:
-                # Agents observe transition
-                for index, player in enumerate(players):
-                    if isinstance(player_agents[index], agents.ReinforcementAgent):
-                        next_game_state = state.CompleteState(players[index], enemies, bullets, self.level.mapr, castle, bonuses)
-                        #timeReward = -0.5
-                        timeReward = 0.1
-                        deltaReward = timeReward + player.score - player_scores[player]  # Calculate player score
-                        #if player.state == player.STATE_DEAD:
-                        #    deltaReward -= 200
-                        player_agents[index].observeTransition(game_state,player_actions[player],next_game_state,deltaReward),
+        gtimer.update(time_passed)
 
 
-            self.draw()
+        return self.step_return(False)
 
 
 
-def startGame():
-    global gtimer, sprites, screen, players, enemies, bullets, bonuses, labels, play_sounds, sounds, castle
-
-    gtimer = Timer()
-
-    sprites = None
-    screen = None
-    players = []
-    enemies = []
-    bullets = []
-    bonuses = []
-    labels = []
-
-    #play_sounds = True
-    play_sounds = False
-    sounds = {}
-
-    game = Game()
-    castle = Castle()
-    game.showMenu()
-
-
-
-if __name__ == "__main__":
-
-    parser = OptionParser()
-    parser.add_option("-e", "--enemyspawnrate", dest="enemy_spawn_rate", default="1.0")
-    parser.add_option("-l", "--leveltype", dest="level_type", default="original")
-    parser.add_option("-a", "--agent", dest="agent_type", default="m")          # m: manual; q: q-learning; r: random
-    parser.add_option("-s", "--gamespeed", dest="game_speed", default="1.0")
-    parser.add_option("-k", "--train", dest="train_episodes", default="1")
-    parser.add_option("-p", "--players", dest="players_num", default="1")
-    global options
-    (options, args) = parser.parse_args()
-
-    options.enemy_spawn_rate = float(options.enemy_spawn_rate)
-    options.game_speed = float(options.game_speed)
-    options.train_episodes = int(options.train_episodes)
-    options.players_num = int(options.players_num)
-
-    player_agents = []
-    agent1 = None
-    agent2 = None
-    if options.agent_type == "m":
-        agent1 = agents.ManualAgent()
-        agent2 = agents.ManualAgent()
-    elif options.agent_type == "q":
-        agent1 = agents.QLearningAgent()
-        agent2 = agents.QLearningAgent()
-    elif options.agent_type == "p":
-        agent1 = pgAgents.PolicyGradientAgent()
-        agent2 = pgAgents.PolicyGradientAgent()
-    else:
-        agent1 = agents.RandomAgent()
-        agent2 = agents.RandomAgent()
-    player_agents.append(agent1)
-    if options.players_num >= 2:
-        player_agents.append(agent2)
-
-
-    # gtimer = Timer()
-    #
-    # sprites = None
-    # screen = None
-    # players = []
-    # enemies = []
-    # bullets = []
-    # bonuses = []
-    # labels = []
-    #
-    # #play_sounds = True
-    # play_sounds = False
-    # sounds = {}
-    #
-    # game = Game()
-    # castle = Castle()
-    # # game.showMenu()
-
-    startGame()

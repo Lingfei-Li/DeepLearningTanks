@@ -267,12 +267,14 @@ class PolicyGradientAgent(ReinforcementAgent):
         self.weights = util.Counter()
 
         #100 episodes of training
-        self.weights['enemy'] = -10
+        # self.weights['enemy'] = -10
         self.weights['bias'] = -10
-        self.weights['bullet'] = -200
+        # self.weights['bullet'] = -200
+        self.weights["horizontalEnemy"], self.weights["verticalEnemy"] = -200, -200
+        self.weights["horizontalBullet"], self.weights["verticalBullet"] = -50, -50
         self.weights['edge'] = -10
-        self.weights['hitEnemy'] = 10
-        self.weights['moveFoward'] = 10
+        # self.weights['hitEnemy'] = 10
+        # self.weights['moveFoward'] = 10
 
         self.legalActions = Const.ACTIONS
         self.featExtractor = SimpleExtractor()
