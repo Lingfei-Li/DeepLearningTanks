@@ -6,6 +6,8 @@ from optparse import OptionParser
 from const import Const
 from featureExtractors import  PositionExtractor
 from featureExtractors import  DangerExtractor
+import scipy.misc as smp
+import numpy as np
 
 
 class myRect(pygame.Rect):
@@ -1850,17 +1852,15 @@ class Game:
 
 
 class Env:
-    def __init__(self, leveltype, gamespeed, trainepisodes):
+    def __init__(self):
         global options
         options = dict()
-        options["level_type"] = leveltype
-        # options["game_speed"] = gamespeed
+        options["level_type"] = 'minimal'
         options["game_speed"] = 5
-        options["train_episodes"] = trainepisodes
+        options["train_episodes"] = 20
         options["draw"] = True
         self.game = None
         self.lastScore = 0
-
 
     def reset(self):
         global gtimer, sprites, screen, players, enemies, bullets, bonuses, labels, play_sounds, sounds, castle
@@ -1895,7 +1895,7 @@ class Env:
         time_reward = 1
         reward = player.score + time_reward
         return game_state , reward, episode_over, None
-        return DangerExtractor.getFeatures(game_state) , reward, episode_over, None
+        # return DangerExtractor.getFeatures(game_state) , reward, episode_over, None
 
     def render(self):
         self.game.draw()
@@ -1905,6 +1905,8 @@ class Env:
     @returns state, reward, episode_over
     '''
     def step(self, action):
+
+
         # Main game loop
 
         time_passed = self.game.clock.tick(50*options["game_speed"])
@@ -1963,4 +1965,34 @@ class Env:
         return self.step_return(False)
 
 
+def rgb2gray(rgb):
+    return np.dot(rgb[..., : 3], [0.229, 0.587, 0.114])
 
+
+if __name__ == "__main__":
+    env = Env()
+    env.reset()
+
+    for i in range(0, 100):
+        env.step(0)
+        env.render()
+        print(i)
+
+    while True:
+        # print(pygame.surfarray.array2d(screen))
+        # print(pygame.surfarray.pixels_green(screen))
+        # array = pygame.surfarray.pixels_green(screen)
+        # array = pygame.surfarray.array3d(screen)
+        # print(array)
+        # array = pygame.surfarray.array_colorkey(screen)
+        # for i in range(0, len(array)):
+        #     for j in range(0, len(array[0])):
+        #         if array[i][j] != 255:
+        #             print(i, j)
+        #             pass
+        array = pygame.surfarray.array2d(screen)
+        img = smp.toimage(array)
+        img.show()
+        while True:
+            pass
+        break

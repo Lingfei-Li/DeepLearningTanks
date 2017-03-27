@@ -13,3 +13,7 @@ class CompleteState:
         self.castle = castle
         self.bonus = bonus
 
+
+class PixelsState:
+    def __init__(self, game):
+        self.pixels = game.surfarray.array2d()

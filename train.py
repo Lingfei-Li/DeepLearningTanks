@@ -21,11 +21,7 @@ class ANNAgent:
         self.weights = util.Counter()
         self.game_state = None
 
-        self.train_episodes = 10000
-        self.level_type = "minimal"
-        self.game_speed = 1000
-
-        self.env = Env(self.level_type, self.game_speed, self.train_episodes)
+        self.env = Env()
 
         self.input_num = self.featExtractor2.getFeatureNum()
         self.hidden_num = 100
