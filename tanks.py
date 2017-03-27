@@ -884,7 +884,8 @@ class Enemy(Tank):
         self.rotate(self.direction, False)
 
         if position == None:
-            self.rect.topleft = self.getFreeSpawningPosition()
+            # self.rect.topleft = self.getFreeSpawningPosition()
+            self.rect.topleft = self.getRandomSpawningPosition()
             if not self.rect.topleft:
                 self.state = self.STATE_DEAD
                 return
@@ -929,6 +930,44 @@ class Enemy(Tank):
         gtimer.add(500/options["game_speed"], lambda :bonus.toggleVisibility())
         gtimer.add(10000/options["game_speed"], lambda :bonuses.remove(bonus), 1)
 
+    def getRandomSpawningPosition(self):
+
+        global players, enemies
+
+        available_positions = [
+            [(self.level.TILE_SIZE * 2 - self.rect.width) / 2, (self.level.TILE_SIZE * 2 - self.rect.height) / 2],
+            [12 * self.level.TILE_SIZE + (self.level.TILE_SIZE * 2 - self.rect.width) / 2, (self.level.TILE_SIZE * 2 - self.rect.height) / 2],
+            [24 * self.level.TILE_SIZE + (self.level.TILE_SIZE * 2 - self.rect.width) / 2,  (self.level.TILE_SIZE * 2 - self.rect.height) / 2]
+        ]
+        while True:
+            pos = [
+                random.uniform(self.level.TILE_SIZE, 24*self.level.TILE_SIZE),
+                random.uniform(self.level.TILE_SIZE, 24*self.level.TILE_SIZE)
+            ]
+
+            enemy_rect = pygame.Rect(pos, [26, 26])
+
+            # collisions with other enemies
+            collision = False
+            for enemy in enemies:
+                if enemy_rect.colliderect(enemy.rect):
+                    collision = True
+                    continue
+
+            if collision:
+                continue
+
+            # collisions with players
+            collision = False
+            for player in players:
+                if enemy_rect.colliderect(player.rect):
+                    collision = True
+                    continue
+
+            if collision:
+                continue
+
+            return pos
 
     def getFreeSpawningPosition(self):
 
@@ -1009,9 +1048,9 @@ class Enemy(Tank):
 
         # collisions with other enemies
         for enemy in enemies:
-            if enemy != self:
-                if abs(self.rect.centerx - enemy.rect.centerx) < 30 and abs(self.rect.centery-enemy.rect.centery) < 30:
-                    self.rect.centerx += 50
+            # if enemy != self:
+            #     if abs(self.rect.centerx - enemy.rect.centerx) < 30 and abs(self.rect.centery-enemy.rect.centery) < 30:
+            #         self.rect.centerx += 50
             if enemy != self and new_rect.colliderect(enemy.rect):
                 self.turnAround()
                 self.path = self.generatePath(self.direction)
@@ -1019,13 +1058,14 @@ class Enemy(Tank):
 
         # collisions with players
         for player in players:
-            if abs(self.rect.centerx - player.rect.centerx) < 30 and abs(self.rect.centery-player.rect.centery) < 30:
-                self.rect.centerx += 50
-            if new_rect.colliderect(player.rect):
-                self.turnAround()
-                self.path = self.generatePath(self.direction)
-                self.rect.topleft = new_rect.topleft
-                return
+            # if abs(self.rect.centerx - player.rect.centerx) < 30 and abs(self.rect.centery-player.rect.centery) < 30:
+            #     self.rect.centerx += 50
+            # if new_rect.colliderect(player.rect):
+            #     self.turnAround()
+            #     self.path = self.generatePath(self.direction)
+                # self.rect.topleft = new_rect.topleft
+                # return
+            pass
 
         # collisions with bonuses
         for bonus in bonuses:
@@ -1247,7 +1287,12 @@ class Player(Tank):
     def reset(self):
         """ reset player """
         self.rotate(self.start_direction, False)
-        self.rect.topleft = self.start_position
+        pos = [
+            random.uniform(self.level.TILE_SIZE, 24*self.level.TILE_SIZE),
+            random.uniform(self.level.TILE_SIZE, 24*self.level.TILE_SIZE)
+        ]
+        # self.rect.topleft = self.start_position
+        self.rect.topleft = pos
         self.superpowers = 0
         self.max_active_bullets = 1
         self.health = 100
@@ -1416,7 +1461,7 @@ class Game:
                 "bonus" : 0, "enemy0" : 0, "enemy1" : 0, "enemy2" : 0, "enemy3" : 0
             }
 
-        self.shieldPlayer(player, True, 4000)
+        # self.shieldPlayer(player, True, 4000)
 
 
     def showMenu(self):
@@ -1791,7 +1836,7 @@ class Game:
 
         self.reloadPlayers()
 
-        gtimer.add(3000/(options["game_speed"]), lambda :self.spawnEnemy())
+        gtimer.add(0, lambda :self.spawnEnemy())
 
         # if True, start "game over" animation
         self.game_over = False
@@ -1802,12 +1847,15 @@ class Game:
         # if False, players won't be able to do anything
         self.active = True
 
+
+
 class Env:
     def __init__(self, leveltype, gamespeed, trainepisodes):
         global options
         options = dict()
         options["level_type"] = leveltype
-        options["game_speed"] = gamespeed
+        # options["game_speed"] = gamespeed
+        options["game_speed"] = 5
         options["train_episodes"] = trainepisodes
         options["draw"] = True
         self.game = None
