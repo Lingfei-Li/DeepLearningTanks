@@ -1,4 +1,6 @@
 
+import pygame
+import scipy as sp
 
 
 
@@ -14,6 +16,6 @@ class CompleteState:
         self.bonus = bonus
 
 
-class PixelsState:
-    def __init__(self, game):
-        self.pixels = game.surfarray.array2d()
+def getRawState(screen):
+    img = pygame.surfarray.array2d(screen)
+    return sp.misc.imresize(img[:208, :208], (104, 104))

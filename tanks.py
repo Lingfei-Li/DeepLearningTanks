@@ -8,6 +8,7 @@ from featureExtractors import  PositionExtractor
 from featureExtractors import  DangerExtractor
 import scipy.misc as smp
 import numpy as np
+import scipy as sp
 
 
 class myRect(pygame.Rect):
@@ -65,8 +66,8 @@ class Castle:
         global sprites
 
         # images
-        self.img_undamaged = sprites.subsurface(0, 15*2, 16*2, 16*2)
-        self.img_destroyed = sprites.subsurface(16*2, 15*2, 16*2, 16*2)
+        self.img_undamaged = sprites.subsurface(0, 15, 16, 16)
+        self.img_destroyed = sprites.subsurface(16, 15, 16, 16)
 
         # init position
         # self.rect = pygame.Rect(12*16, 24*16, 32, 32)
@@ -142,7 +143,7 @@ class Bonus:
             self.BONUS_TIMER
         ])
 
-        self.image = sprites.subsurface(16*2*self.bonus, 32*2, 16*2, 15*2)
+        self.image = sprites.subsurface(16*self.bonus, 32, 16, 15)
 
     def draw(self):
         """ draw bonus """
@@ -178,25 +179,25 @@ class Bullet:
         # 2-can destroy steel
         self.power = 1
 
-        self.image = sprites.subsurface(75*2, 74*2, 3*2, 4*2)
+        self.image = sprites.subsurface(75, 74, 3, 4)
 
         # position is player's top left corner, so we'll need to
         # recalculate a bit. also rotate image itself.
         if direction == self.DIR_UP:
-            self.rect = pygame.Rect(position[0] + 11, position[1] - 8, 6, 8)
+            self.rect = pygame.Rect(position[0] + 10, position[1] - 4, 3, 4)
         elif direction == self.DIR_RIGHT:
             self.image = pygame.transform.rotate(self.image, 270)
-            self.rect = pygame.Rect(position[0] + 26, position[1] + 11, 8, 6)
+            self.rect = pygame.Rect(position[0] + 13, position[1] + 5, 4, 3)
         elif direction == self.DIR_DOWN:
             self.image = pygame.transform.rotate(self.image, 180)
-            self.rect = pygame.Rect(position[0] + 11, position[1] + 26, 6, 8)
+            self.rect = pygame.Rect(position[0] + 5, position[1] + 13, 3, 4)
         elif direction == self.DIR_LEFT:
             self.image = pygame.transform.rotate(self.image, 90)
-            self.rect = pygame.Rect(position[0] - 8 , position[1] + 11, 8, 6)
+            self.rect = pygame.Rect(position[0] - 4 , position[1] + 5, 4, 3)
 
         self.explosion_images = [
-            sprites.subsurface(0, 80*2, 32*2, 32*2),
-            sprites.subsurface(32*2, 80*2, 32*2, 32*2),
+            sprites.subsurface(0, 40, 16, 16),
+            sprites.subsurface(16, 40, 16, 16),
         ]
 
         self.speed = speed
@@ -208,8 +209,8 @@ class Bullet:
         global screen
         if self.state == self.STATE_ACTIVE:
             screen.blit(self.image, self.rect.topleft)
-        elif self.state == self.STATE_EXPLODING:
-            self.explosion.draw()
+        # elif self.state == self.STATE_EXPLODING:
+        #     self.explosion.draw()
 
     def update(self):
         global castle, players, enemies, bullets
@@ -232,14 +233,14 @@ class Bullet:
                 return
         elif self.direction == self.DIR_RIGHT:
             self.rect.topleft = [self.rect.left + self.speed, self.rect.top]
-            if self.rect.left > (416 - self.rect.width):
+            if self.rect.left > (208 - self.rect.width):
                 if play_sounds and self.owner == self.OWNER_PLAYER:
                     sounds["steel"].play()
                 self.explode()
                 return
         elif self.direction == self.DIR_DOWN:
             self.rect.topleft = [self.rect.left, self.rect.top + self.speed]
-            if self.rect.top > (416 - self.rect.height):
+            if self.rect.top > (208 - self.rect.height):
                 if play_sounds and self.owner == self.OWNER_PLAYER:
                     sounds["steel"].play()
                 self.explode()
@@ -340,9 +341,9 @@ class Explosion:
 
         if images == None:
             images = [
-                sprites.subsurface(0, 80*2, 32*2, 32*2),
-                sprites.subsurface(32*2, 80*2, 32*2, 32*2),
-                sprites.subsurface(64*2, 80*2, 32*2, 32*2)
+                sprites.subsurface(0, 80, 32, 32),
+                sprites.subsurface(32, 80, 32, 32),
+                sprites.subsurface(64, 80, 32, 32)
             ]
 
         images.reverse()
@@ -383,14 +384,14 @@ class Level:
         self.max_active_enemies = 3
 
         tile_images = [
-            pygame.Surface((8*2, 8*2)),
-            sprites.subsurface(48*2, 64*2, 8*2, 8*2),
-            sprites.subsurface(48*2, 72*2, 8*2, 8*2),
-            sprites.subsurface(56*2, 72*2, 8*2, 8*2),
-            sprites.subsurface(64*2, 64*2, 8*2, 8*2),
-            sprites.subsurface(64*2, 64*2, 8*2, 8*2),
-            sprites.subsurface(72*2, 64*2, 8*2, 8*2),
-            sprites.subsurface(64*2, 72*2, 8*2, 8*2)
+            pygame.Surface((8, 8)),
+            sprites.subsurface(48, 64, 8, 8),
+            sprites.subsurface(48, 72, 8, 8),
+            sprites.subsurface(56, 72, 8, 8),
+            sprites.subsurface(64, 64, 8, 8),
+            sprites.subsurface(64, 64, 8, 8),
+            sprites.subsurface(72, 64, 8, 8),
+            sprites.subsurface(64, 72, 8, 8)
         ]
         self.tile_empty = tile_images[0]
         self.tile_brick = tile_images[1]
@@ -597,15 +598,15 @@ class Tank:
         self.pressed = [False] * 4
 
         self.shield_images = [
-            sprites.subsurface(0, 48*2, 16*2, 16*2),
-            sprites.subsurface(16*2, 48*2, 16*2, 16*2)
+            sprites.subsurface(0, 48, 16, 16),
+            sprites.subsurface(16, 48, 16, 16)
         ]
         self.shield_image = self.shield_images[0]
         self.shield_index = 0
 
         self.spawn_images = [
-            sprites.subsurface(32*2, 48*2, 16*2, 16*2),
-            sprites.subsurface(48*2, 48*2, 16*2, 16*2)
+            sprites.subsurface(32, 48, 16, 16),
+            sprites.subsurface(48, 48, 16, 16)
         ]
         self.spawn_image = self.spawn_images[0]
         self.spawn_index = 0
@@ -854,14 +855,14 @@ class Enemy(Tank):
                     break
 
         images = [
-            sprites.subsurface(32*2, 0, 13*2, 15*2),
-            sprites.subsurface(48*2, 0, 13*2, 15*2),
-            sprites.subsurface(64*2, 0, 13*2, 15*2),
-            sprites.subsurface(80*2, 0, 13*2, 15*2),
-            sprites.subsurface(32*2, 16*2, 13*2, 15*2),
-            sprites.subsurface(48*2, 16*2, 13*2, 15*2),
-            sprites.subsurface(64*2, 16*2, 13*2, 15*2),
-            sprites.subsurface(80*2, 16*2, 13*2, 15*2)
+            sprites.subsurface(32, 0, 13, 15),
+            sprites.subsurface(48, 0, 13, 15),
+            sprites.subsurface(64, 0, 13, 15),
+            sprites.subsurface(80, 0, 13, 15),
+            sprites.subsurface(32, 16, 13, 15),
+            sprites.subsurface(48, 16, 13, 15),
+            sprites.subsurface(64, 16, 13, 15),
+            sprites.subsurface(80, 16, 13, 15)
         ]
 
         self.image = images[self.type+0]
@@ -938,13 +939,13 @@ class Enemy(Tank):
 
         available_positions = [
             [(self.level.TILE_SIZE * 2 - self.rect.width) / 2, (self.level.TILE_SIZE * 2 - self.rect.height) / 2],
-            [12 * self.level.TILE_SIZE + (self.level.TILE_SIZE * 2 - self.rect.width) / 2, (self.level.TILE_SIZE * 2 - self.rect.height) / 2],
-            [24 * self.level.TILE_SIZE + (self.level.TILE_SIZE * 2 - self.rect.width) / 2,  (self.level.TILE_SIZE * 2 - self.rect.height) / 2]
+            [6 * self.level.TILE_SIZE + (self.level.TILE_SIZE * 2 - self.rect.width) / 2, (self.level.TILE_SIZE * 2 - self.rect.height) / 2],
+            [12 * self.level.TILE_SIZE + (self.level.TILE_SIZE * 2 - self.rect.width) / 2,  (self.level.TILE_SIZE * 2 - self.rect.height) / 2]
         ]
         while True:
             pos = [
-                random.uniform(self.level.TILE_SIZE, 24*self.level.TILE_SIZE),
-                random.uniform(self.level.TILE_SIZE, 24*self.level.TILE_SIZE)
+                random.uniform(self.level.TILE_SIZE, 12*self.level.TILE_SIZE),
+                random.uniform(self.level.TILE_SIZE, 12*self.level.TILE_SIZE)
             ]
 
             enemy_rect = pygame.Rect(pos, [26, 26])
@@ -1029,11 +1030,11 @@ class Enemy(Tank):
                 self.path = self.generatePath(self.direction, True)
                 return
         elif self.direction == self.DIR_RIGHT:
-            if new_position[0] > (416 - 26):
+            if new_position[0] > (208 - 13):
                 self.path = self.generatePath(self.direction, True)
                 return
         elif self.direction == self.DIR_DOWN:
-            if new_position[1] > (416 - 26):
+            if new_position[1] > (208- 13):
                 self.path = self.generatePath(self.direction, True)
                 return
         elif self.direction == self.DIR_LEFT:
@@ -1041,7 +1042,7 @@ class Enemy(Tank):
                 self.path = self.generatePath(self.direction, True)
                 return
 
-        new_rect = pygame.Rect(new_position, [26, 26])
+        new_rect = pygame.Rect(new_position, [13, 13])
 
         # collisions with tiles
         if new_rect.collidelist(self.level.obstacle_rects) != -1:
@@ -1116,8 +1117,8 @@ class Enemy(Tank):
             directions.append(opposite_direction)
 
         # at first, work with general units (steps) not px
-        x = int(round(self.rect.left / 16))
-        y = int(round(self.rect.top / 16))
+        x = int(round(self.rect.left / 8))
+        y = int(round(self.rect.top / 8))
 
         new_direction = None
 
@@ -1159,12 +1160,12 @@ class Enemy(Tank):
         y = self.rect.top
 
         if new_direction in (self.DIR_RIGHT, self.DIR_LEFT):
-            axis_fix = self.nearest(y, 16) - y
+            axis_fix = self.nearest(y, 8) - y
         else:
-            axis_fix = self.nearest(x, 16) - x
+            axis_fix = self.nearest(x, 8) - x
         axis_fix = 0
 
-        pixels = self.nearest(random.randint(1, 12) * 32, 32) + axis_fix + 3
+        pixels = self.nearest(random.randint(1, 12) * 16, 16) + axis_fix + 3
 
         if new_direction == self.DIR_UP:
             for px in range(0, pixels, self.speed):
@@ -1192,7 +1193,7 @@ class Player(Tank):
         global sprites
 
         if filename == None:
-            filename = (0, 0, 16*2, 16*2)
+            filename = (0, 0, 16, 16)
 
         self.start_position = position
         self.start_direction = direction
@@ -1251,18 +1252,18 @@ class Player(Tank):
                 return
         elif direction == self.DIR_RIGHT:
             new_position = [self.rect.left + self.speed, self.rect.top]
-            if new_position[0] > (416 - 26):
+            if new_position[0] > (208 - 13):
                 return
         elif direction == self.DIR_DOWN:
             new_position = [self.rect.left, self.rect.top + self.speed]
-            if new_position[1] > (416 - 26):
+            if new_position[1] > (208 - 13):
                 return
         elif direction == self.DIR_LEFT:
             new_position = [self.rect.left - self.speed, self.rect.top]
             if new_position[0] < 0:
                 return
 
-        player_rect = pygame.Rect(new_position, [26, 26])
+        player_rect = pygame.Rect(new_position, [13, 13])
 
         # collisions with tiles
         if player_rect.collidelist(self.level.obstacle_rects) != -1:
@@ -1290,8 +1291,8 @@ class Player(Tank):
         """ reset player """
         self.rotate(self.start_direction, False)
         pos = [
-            random.uniform(self.level.TILE_SIZE, 24*self.level.TILE_SIZE),
-            random.uniform(self.level.TILE_SIZE, 24*self.level.TILE_SIZE)
+            random.uniform(self.level.TILE_SIZE, 12*self.level.TILE_SIZE),
+            random.uniform(self.level.TILE_SIZE, 12*self.level.TILE_SIZE)
         ]
         # self.rect.topleft = self.start_position
         self.rect.topleft = pos
@@ -1325,7 +1326,8 @@ class Game:
 
         pygame.display.set_caption("Battle City")
 
-        size = width, height = 480, 416
+        # size = width, height = 480, 416
+        size = width, height = 240, 208
 
         '''
         if "-f" in sys.argv[1:]:
@@ -1339,10 +1341,12 @@ class Game:
         # load sprites (funky version)
         #sprites = pygame.transform.scale2x(pygame.image.load("images/sprites.gif"))
         # load sprites (pixely version)
-        sprites = pygame.transform.scale(pygame.image.load("images/sprites.gif"), [192, 224])
+        # sprites = pygame.transform.scale(pygame.image.load("images/sprites.gif"), [192, 224])
+        sprites = pygame.transform.scale(pygame.image.load("images/sprites.gif"), [96, 112])
         #screen.set_colorkey((0,138,104))
 
-        pygame.display.set_icon(sprites.subsurface(0, 0, 13*2, 13*2))
+        # pygame.display.set_icon(sprites.subsurface(0, 0, 13*2, 13*2))
+        pygame.display.set_icon(sprites.subsurface(0, 0, 13, 13))
 
         # load sounds
         if play_sounds:
@@ -1358,12 +1362,12 @@ class Game:
             sounds["brick"] = pygame.mixer.Sound("sounds/brick.ogg")
             sounds["steel"] = pygame.mixer.Sound("sounds/steel.ogg")
 
-        self.enemy_life_image = sprites.subsurface(81*2, 57*2, 7*2, 7*2)
-        self.player_life_image = sprites.subsurface(89*2, 56*2, 7*2, 8*2)
-        self.flag_image = sprites.subsurface(64*2, 49*2, 16*2, 15*2)
+        self.enemy_life_image = sprites.subsurface(81, 57, 7, 7)
+        self.player_life_image = sprites.subsurface(89, 56, 7, 8)
+        self.flag_image = sprites.subsurface(64, 49, 16, 15)
 
         # this is used in intro screen
-        self.player_image = pygame.transform.rotate(sprites.subsurface(0, 0, 13*2, 13*2), 270)
+        self.player_image = pygame.transform.rotate(sprites.subsurface(0, 0, 13, 13), 270)
 
         # if true, no new enemies will be spawn during this time
         self.timefreeze = False
@@ -1495,20 +1499,21 @@ class Game:
 
         if len(players) == 0:
             # first player
-            x = 8 * self.TILE_SIZE + (self.TILE_SIZE * 2 - 26) / 2
-            y = 24 * self.TILE_SIZE + (self.TILE_SIZE * 2 - 26) / 2
+            x = 4 * self.TILE_SIZE + (self.TILE_SIZE * 2 - 26) / 2
+            y = 12 * self.TILE_SIZE + (self.TILE_SIZE * 2 - 26) / 2
 
             player = Player(
-                self.level, 0, [x, y], self.DIR_UP, (0, 0, 13*2, 13*2)
+                # self.level, 0, [x, y], self.DIR_UP, (0, 0, 13*2, 13*2)
+                self.level, 0, [x, y], self.DIR_UP, (0, 0, 13, 13)
             )
             players.append(player)
 
             # second player
             if self.nr_of_players == 2:
-                x = 16 * self.TILE_SIZE + (self.TILE_SIZE * 2 - 26) / 2
-                y = 24 * self.TILE_SIZE + (self.TILE_SIZE * 2 - 26) / 2
+                x = 8 * self.TILE_SIZE + (self.TILE_SIZE * 2 - 26) / 2
+                y = 12 * self.TILE_SIZE + (self.TILE_SIZE * 2 - 26) / 2
                 player = Player(
-                    self.level, 0, [x, y], self.DIR_UP, (16*2, 0, 13*2, 13*2)
+                    self.level, 0, [x, y], self.DIR_UP, (16, 0, 13, 13)
                 )
                 player.controls = [102, 119, 100, 115, 97]
                 players.append(player)
@@ -1686,7 +1691,7 @@ class Game:
 
         global screen, sprites
 
-        bricks = sprites.subsurface(56*2, 64*2, 8*2, 8*2)
+        bricks = sprites.subsurface(56, 64, 8, 8)
         brick1 = bricks.subsurface((0, 0, 8, 8))
         brick2 = bricks.subsurface((8, 0, 8, 8))
         brick3 = bricks.subsurface((8, 8, 8, 8))
@@ -1856,7 +1861,7 @@ class Env:
         global options
         options = dict()
         options["level_type"] = 'minimal'
-        options["game_speed"] = 5
+        options["game_speed"] = 50
         options["train_episodes"] = 20
         options["draw"] = True
         self.game = None
@@ -1882,16 +1887,22 @@ class Env:
         self.game.showMenu()
 
         player = players[0]
-        game_state = state.CompleteState(player, enemies, bullets, self.game.level.mapr, castle, bonuses)
 
-        return game_state
+        # Modify this line to change the state representation of the game
+        # game_state = state.CompleteState(player, enemies, bullets, self.game.level.mapr, castle, bonuses)
+        # img = pygame.surfarray.array2d(screen)
+        # game_state = sp.misc.imresize(img[:416, :416], (104, 104))
+        return state.getRawState(screen)
 
     '''
     @returns state, reward, gameover
     '''
     def step_return(self, episode_over):
         player = players[0]
-        game_state = state.CompleteState(player, enemies, bullets, self.game.level.mapr, castle, bonuses)
+
+        # game_state = state.CompleteState(player, enemies, bullets, self.game.level.mapr, castle, bonuses)
+        game_state = state.getRawState(screen)
+
         time_reward = 1
         reward = player.score + time_reward
         return game_state , reward, episode_over, None
@@ -1905,7 +1916,6 @@ class Env:
     @returns state, reward, episode_over
     '''
     def step(self, action):
-
 
         # Main game loop
 
@@ -1965,10 +1975,6 @@ class Env:
         return self.step_return(False)
 
 
-def rgb2gray(rgb):
-    return np.dot(rgb[..., : 3], [0.229, 0.587, 0.114])
-
-
 if __name__ == "__main__":
     env = Env()
     env.reset()
@@ -1979,18 +1985,10 @@ if __name__ == "__main__":
         print(i)
 
     while True:
-        # print(pygame.surfarray.array2d(screen))
-        # print(pygame.surfarray.pixels_green(screen))
-        # array = pygame.surfarray.pixels_green(screen)
-        # array = pygame.surfarray.array3d(screen)
-        # print(array)
-        # array = pygame.surfarray.array_colorkey(screen)
-        # for i in range(0, len(array)):
-        #     for j in range(0, len(array[0])):
-        #         if array[i][j] != 255:
-        #             print(i, j)
-        #             pass
         array = pygame.surfarray.array2d(screen)
+        array = array[:208, :208]
+        array = sp.misc.imresize(array, (104, 104))
+        print(array.shape)
         img = smp.toimage(array)
         img.show()
         while True:
